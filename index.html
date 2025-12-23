@@ -1,0 +1,187 @@
+import React, { useState, useEffect } from 'react';
+import { Plus, Trash2, Check, Clock, Inbox, Calendar, FolderOpen, Archive } from 'lucide-react';
+
+export default function GTDSystem() {
+  const [items, setItems] = useState([]);
+  const [newItem, setNewItem] = useState('');
+  const [activeView, setActiveView] = useState('inbox');
+  const [showCompleted, setShowCompleted] = useState(false);
+
+  const views = [
+    { id: 'inbox', name: 'Eingang', icon: Inbox },
+    { id: 'next', name: 'Nächste Aktionen', icon: Check },
+    { id: 'waiting', name: 'Warten auf', icon: Clock },
+    { id: 'scheduled', name: 'Geplant', icon: Calendar },
+    { id: 'someday', name: 'Irgendwann', icon: FolderOpen },
+    { id: 'completed', name: 'Erledigt', icon: Archive }
+  ];
+
+  const addItem = () => {
+    if (newItem.trim()) {
+      setItems([...items, {
+        id: Date.now(),
+        text: newItem,
+        status: 'inbox',
+        completed: false,
+        createdAt: new Date().toISOString()
+      }]);
+      setNewItem('');
+    }
+  };
+
+  const moveItem = (id, newStatus) => {
+    setItems(items.map(item => 
+      item.id === id ? { ...item, status: newStatus } : item
+    ));
+  };
+
+  const toggleComplete = (id) => {
+    setItems(items.map(item => 
+      item.id === id ? { ...item, completed: !item.completed, status: item.completed ? item.status : 'completed' } : item
+    ));
+  };
+
+  const deleteItem = (id) => {
+    setItems(items.filter(item => item.id !== id));
+  };
+
+  const filteredItems = items.filter(item => {
+    if (activeView === 'completed') return item.completed;
+    if (activeView === 'inbox') return item.status === 'inbox' && !item.completed;
+    return item.status === activeView && !item.completed;
+  });
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-white rounded-lg shadow-xl overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">
+            <h1 className="text-3xl font-bold mb-2">GTD System</h1>
+            <p className="text-blue-100">Getting Things Done - Organisiere deine Aufgaben</p>
+          </div>
+
+          <div className="p-6">
+            <div className="mb-6">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newItem}
+                  onChange={(e) => setNewItem(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && addItem()}
+                  placeholder="Neue Aufgabe erfassen..."
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  onClick={addItem}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
+                >
+                  <Plus size={20} />
+                  Hinzufügen
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+              {views.map(view => {
+                const Icon = view.icon;
+                const count = items.filter(item => 
+                  view.id === 'completed' ? item.completed : (item.status === view.id && !item.completed)
+                ).length;
+                
+                return (
+                  <button
+                    key={view.id}
+                    onClick={() => setActiveView(view.id)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition ${
+                      activeView === view.id
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <Icon size={18} />
+                    {view.name}
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      activeView === view.id ? 'bg-blue-500' : 'bg-gray-300'
+                    }`}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="space-y-3">
+              {filteredItems.length === 0 ? (
+                <div className="text-center py-12 text-gray-400">
+                  <p className="text-lg">Keine Aufgaben in dieser Kategorie</p>
+                </div>
+              ) : (
+                filteredItems.map(item => (
+                  <div
+                    key={item.id}
+                    className={`bg-white border rounded-lg p-4 transition hover:shadow-md ${
+                      item.completed ? 'border-green-200 bg-green-50' : 'border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <button
+                        onClick={() => toggleComplete(item.id)}
+                        className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition ${
+                          item.completed
+                            ? 'bg-green-500 border-green-500'
+                            : 'border-gray-300 hover:border-blue-500'
+                        }`}
+                      >
+                        {item.completed && <Check size={14} className="text-white" />}
+                      </button>
+                      
+                      <div className="flex-1">
+                        <p className={`text-gray-800 ${item.completed ? 'line-through text-gray-500' : ''}`}>
+                          {item.text}
+                        </p>
+                        
+                        {!item.completed && activeView !== 'completed' && (
+                          <div className="flex gap-2 mt-3">
+                            {['next', 'waiting', 'scheduled', 'someday'].map(status => (
+                              status !== item.status && (
+                                <button
+                                  key={status}
+                                  onClick={() => moveItem(item.id, status)}
+                                  className="text-xs px-3 py-1 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 transition"
+                                >
+                                  → {views.find(v => v.id === status)?.name}
+                                </button>
+                              )
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <button
+                        onClick={() => deleteItem(item.id)}
+                        className="text-gray-400 hover:text-red-500 transition"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+              <h3 className="font-semibold text-blue-900 mb-2">GTD Workflow</h3>
+              <ol className="text-sm text-blue-800 space-y-1">
+                <li>1. Erfasse alles im <strong>Eingang</strong></li>
+                <li>2. Verarbeite und entscheide: Was ist der nächste Schritt?</li>
+                <li>3. Organisiere in passende Listen</li>
+                <li>4. Überprüfe regelmäßig deine Listen</li>
+                <li>5. Erledige Aufgaben nach Kontext und Priorität</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
