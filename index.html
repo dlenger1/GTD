@@ -223,6 +223,30 @@
         var data = [];
         var view = 'inbox';
         var draggedItem = null;
+
+        function saveToStorage() {
+            try {
+                localStorage.setItem('gtd_data', JSON.stringify(data));
+                localStorage.setItem('gtd_view', view);
+            } catch(e) {
+                console.log('Speichern fehlgeschlagen');
+            }
+        }
+
+        function loadFromStorage() {
+            try {
+                var saved = localStorage.getItem('gtd_data');
+                if (saved) {
+                    data = JSON.parse(saved);
+                }
+                var savedView = localStorage.getItem('gtd_view');
+                if (savedView) {
+                    view = savedView;
+                }
+            } catch(e) {
+                console.log('Laden fehlgeschlagen');
+            }
+        }
         
         var views = [
             {id: 'inbox', name: 'Eingang'},
@@ -247,6 +271,7 @@
                 });
                 input.value = '';
                 dateInput.value = '';
+                saveToStorage();
                 draw();
             }
         }
@@ -261,6 +286,7 @@
                     break;
                 }
             }
+            saveToStorage();
             draw();
         }
 
@@ -271,6 +297,7 @@
                     break;
                 }
             }
+            saveToStorage();
             draw();
         }
 
@@ -282,6 +309,7 @@
                 }
             }
             data = newData;
+            saveToStorage();
             draw();
         }
 
@@ -297,6 +325,7 @@
                             break;
                         }
                     }
+                    saveToStorage();
                     draw();
                 }
             }
@@ -309,6 +338,7 @@
                     break;
                 }
             }
+            saveToStorage();
             draw();
         }
 
@@ -328,6 +358,7 @@
 
         function setView(v) {
             view = v;
+            saveToStorage();
             draw();
         }
 
@@ -461,6 +492,7 @@
             });
         });
 
+        loadFromStorage();
         draw();
     </script>
 </body>
